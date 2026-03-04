@@ -1,0 +1,13 @@
+torch>=2.0
+torchvision
+numpy
+scipy
+scikit-image
+opencv-python-headless
+matplotlib
+seaborn
+pandas
+click
+tqdm
+ncempy
+Pillow
