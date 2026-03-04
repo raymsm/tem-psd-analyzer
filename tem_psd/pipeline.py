@@ -14,6 +14,9 @@ from .statistics import compute_statistics, format_stats
 from .visualization import save_agglomeration_overlay, save_histogram, save_overlay, save_scatter
 
 
+VALID_SUFFIXES = {".tif", ".tiff", ".png", ".jpg", ".jpeg", ".dm3"}
+
+
 def timestamped_output(base: str | Path) -> Path:
     t = datetime.now().strftime("%Y%m%d_%H%M%S")
     out = Path(base) / t
@@ -21,8 +24,13 @@ def timestamped_output(base: str | Path) -> Path:
     return out
 
 
-def analyze_image(input_path: str | Path, scale: float | None, unit: str, output: str | Path, min_size_nm: float = 0.0):
-    out_dir = timestamped_output(output)
+def _analyze_image_to_dir(
+    input_path: str | Path,
+    scale: float | None,
+    unit: str,
+    out_dir: Path,
+    min_size_nm: float = 0.0,
+):
     img = load_image(input_path)
     proc = preprocess_image(img)
     nm_per_px = scale if scale is not None else detect_scale_bar_nm_per_px(img)
@@ -36,6 +44,7 @@ def analyze_image(input_path: str | Path, scale: float | None, unit: str, output
     image_area_nm2 = img.shape[0] * img.shape[1] * (nm_per_px**2)
     stats = compute_statistics(df, image_area_nm2)
 
+    out_dir.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_dir / "particles.csv", index=False)
     (out_dir / "results_summary.txt").write_text(format_stats(stats))
     save_histogram(df, out_dir)
@@ -44,13 +53,19 @@ def analyze_image(input_path: str | Path, scale: float | None, unit: str, output
     return out_dir, stats
 
 
+def analyze_image(input_path: str | Path, scale: float | None, unit: str, output: str | Path, min_size_nm: float = 0.0):
+    out_dir = timestamped_output(output)
+    return _analyze_image_to_dir(input_path, scale, unit, out_dir, min_size_nm=min_size_nm)
+
+
 def analyze_batch(input_dir: str | Path, scale: float | None, unit: str, output: str | Path, min_size_nm: float = 0.0):
     input_dir = Path(input_dir)
-    files = [p for p in input_dir.iterdir() if p.suffix.lower() in {".tif", ".tiff", ".png", ".jpg", ".jpeg", ".dm3"}]
+    files = sorted([p for p in input_dir.iterdir() if p.suffix.lower() in VALID_SUFFIXES])
     batch_out = timestamped_output(output)
     all_rows = []
     for fp in tqdm(files, desc="Batch analyzing"):
-        out, _ = analyze_image(fp, scale, unit, batch_out, min_size_nm=min_size_nm)
+        per_file_out = batch_out / fp.stem
+        out, _ = _analyze_image_to_dir(fp, scale, unit, per_file_out, min_size_nm=min_size_nm)
         df = pd.read_csv(out / "particles.csv")
         if not df.empty:
             df["source_file"] = fp.name

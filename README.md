@@ -11,9 +11,59 @@ Fully offline CLI tool for TEM/HRTEM nanoparticle segmentation and particle size
 - Synthetic data generator for immediate training/testing
 - Fully offline (no external API calls)
 
-## Installation
+## Requirements
+- Python 3.10+
+- pip
+- Git (for clone workflow)
+
+Project dependencies are listed in [`requirements.txt`](requirements.txt).
+
+## Clone + Install
+
+### Linux / macOS (bash/zsh)
 ```bash
-pip install -e .
+git clone https://github.com/<your-org>/tem-psd-analyzer.git
+cd tem-psd-analyzer
+
+python3 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -e .
+```
+
+### Windows CMD
+```cmd
+git clone https://github.com/<your-org>/tem-psd-analyzer.git
+cd tem-psd-analyzer
+
+py -m venv .venv
+.venv\Scripts\activate
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -e .
+```
+
+### If you are in a strict/offline environment
+If pip attempts build isolation and fails due no external index access, install editable mode with:
+
+```bash
+pip install -e . --no-build-isolation
+```
+
+## Verify Installation
+After installation, the CLI should be available:
+
+### Linux / macOS
+```bash
+tem-psd --help
+```
+
+### Windows CMD
+```cmd
+tem-psd --help
 ```
 
 ## CLI Usage
@@ -77,8 +127,8 @@ Input TEM image --->| preprocessing    |---> normalized image
 ```
 
 ## Output Artifacts
-Each run writes to a timestamped folder:
-`results/YYYYMMDD_HHMMSS/`
+For batch mode, each image gets its own subfolder under the run timestamp (`results/<timestamp>/<image_stem>/`).
+Each run writes to a timestamped folder: `results/YYYYMMDD_HHMMSS/`
 
 - `results_summary.txt`
 - `particles.csv`
